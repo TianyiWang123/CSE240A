@@ -42,17 +42,18 @@ int verbose;
 //static-none
 //gshare:BHT, history
 uint8_t *g_BHT;  // gshare BHT
-uint32_t g_history;  // gshare global history
+uint32_t g_history;  //global history
 int g_BHT_index;
 uint8_t g_result;
-//tournament: local BHT, local PHT, global BHT, selector
-uint8_t *localBHT;  // tournament local BHT 
-uint32_t *localPHT;  // tournament local PHT 
-uint8_t *globalBHT;  // tournament global BHT 
+//tournament: local BHT, local PHT, global history, global BHT, selector
+uint8_t *l_BHT;  // tournament local BHT 
+uint32_t *l_PHT;  // tournament local PHT 
+uint8_t *global_BHT;  // tournament global BHT 
 uint8_t *selector;  // selector fot tournament
-uint8_t localOutcome;
-uint8_t globalOutcome;
-
+uint8_t l_outcome; //result form local predict
+uint8_t global_outcome; //result form global predict
+int PHT_index;
+int global_BHT_index;
 
 
 //------------------------------------//
@@ -76,6 +77,15 @@ init_predictor()
       memset(g_BHT, WN, sizeof(uint8_t)*(1<<ghistoryBits));
       break;
     case TOURNAMENT:
+      g_history = 0;
+      l_BHT = malloc((1 << lhistoryBits) * sizeof(uint8_t));
+      l_PHT = malloc((1 << pcIndexBits) * sizeof(uint32_t));
+      global_BHT = malloc((1 << ghistoryBits) * sizeof(uint8_t));
+      selector = malloc((1 << ghistoryBits) * sizeof(uint8_t));
+      memset(l_BHT, WN, sizeof(uint8_t) * (1 << lhistoryBits));
+      memset(l_PHT, 0, sizeof(uint32_t) * (1 << pcIndexBits));
+      memset(global_BHT, WN, sizeof(uint8_t) * (1 << ghistoryBits));
+      memset(selector, WN, sizeof(uint8_t) * (1 << ghistoryBits));
       break;
     case CUSTOM:
       break;
@@ -109,6 +119,29 @@ make_prediction(uint32_t pc)
       
       return g_result;   
     case TOURNAMENT:
+      PHT_index = pc & ((1 << pcIndexBits) - 1);
+      uint32_t l_BHTindex = l_PHT[PHT_index];
+      uint8_t local_Prediction = l_BHT[l_BHTindex];
+      if(local_Prediction == WN || local_Prediction == SN)
+      {
+        l_outcome = NOTTAKEN
+      }
+      else{l_outcome = TAKEN;}
+      global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
+      uint8_t global_Prediction = global_BHT[global_BHT_index];
+      if(global_Prediction == WN || global_Prediction == SN)
+      {
+        global_outcome = NOTTAKEN;
+      }
+      else{global_outcome = TAKEN;}
+
+      // selection of predictor
+      //elector[globalBHTindex] == 00 / 01--global predictor; 10 / 11--local predictor
+      uint8_t res = selector[global_BHT_index];
+      if (res == WN || res == SN) {
+        return global_outcome;
+      } 
+      else {return l_outcome;}
     case CUSTOM:
     default:
       break;
