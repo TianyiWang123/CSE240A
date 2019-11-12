@@ -177,7 +177,7 @@ void tournament_update(uint32_t pc, uint8_t outcome) {
     localPHT[PHTindex] |= outcome;
     g_history <<= 1;
     g_history  &= ((1 << ghistoryBits) - 1);
-    ghistory |= outcome;
+    g_history |= outcome;
 }
 
 void
