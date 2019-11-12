@@ -124,7 +124,7 @@ make_prediction(uint32_t pc)
       uint8_t local_Prediction = l_BHT[l_BHTindex];
       if(local_Prediction == WN || local_Prediction == SN)
       {
-        l_outcome = NOTTAKEN
+        l_outcome = NOTTAKEN;
       }
       else{l_outcome = TAKEN;}
       global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
@@ -167,10 +167,10 @@ void gshare_shift_predictor(uint32_t pc, uint8_t outcome) {
 }
   
 void tournament_shift_selector(uint8_t outcome) {
-    int globalBHTindex = g_history & ((1 << ghistoryBits) - 1);
-    if (localOutcome == outcome) {
-        if (selector[globalBHTindex] != ST)
-            selector[globalBHTindex]++;
+    global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
+    if (l_outcome == outcome) {
+        if (selector[global_BHT_index] != ST)
+            selector[global_BHT_index]++;
     } else {
         if (selector[globalBHTindex] != SN)
             selector[globalBHTindex]--;
@@ -178,35 +178,35 @@ void tournament_shift_selector(uint8_t outcome) {
 }
 
 void tournament_shift_predictor(uint32_t pc, uint8_t outcome) {
-    int PHTindex = pc & ((1 << pcIndexBits) - 1);
-    uint32_t localBHTindex = localPHT[PHTindex];
+    PHT_index = pc & ((1 << pcIndexBits) - 1);
+    uint32_t local_BHT_index = l_PHT[PHT_index];
     if (outcome == TAKEN) {
-        if (localBHT[localBHTindex] != ST)
-            localBHT[localBHTindex]++;
+        if (l_BHT[local_BHT_index] != ST)
+            l_BHT[local_BHT_index]++;
     } else {
-        if (localBHT[localBHTindex] != SN)
-            localBHT[localBHTindex]--;
+        if (l_BHT[local_BHT_index] != SN)
+            l_BHT[local_BHT_index]--;
     }
 
-    int globalBHTindex = g_history & ((1 << ghistoryBits) - 1);
+    int global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
     if (outcome == TAKEN) {
-        if (globalBHT[globalBHTindex] != ST)
-            globalBHT[globalBHTindex]++;
+        if (global_BHT[global_BHT_index] != ST)
+            global_BHT[global_BHT_index]++;
     } else {
-        if (globalBHT[globalBHTindex] != SN)
-            globalBHT[globalBHTindex]--;
+        if (global_BHT[global_BHT_index] != SN)
+            global_BHT[global_BHT_index]--;
     }
 }
 
 void tournament_update(uint32_t pc, uint8_t outcome) {
-    if (localOutcome != globalOutcome) {
+    if (l_outcome != global_outcome) {
         tournament_shift_selector(outcome);
     }
-    tournament_shift_predictor(pc, outcome); // shift local predictor
-    int PHTindex = pc & ((1 << pcIndexBits) - 1);
-    localPHT[PHTindex] <<= 1;
-    localPHT[PHTindex] &= ((1 << lhistoryBits) - 1);
-    localPHT[PHTindex] |= outcome;
+    tournament_shift_predictor(pc, outcome);
+    int PHT_index = pc & ((1 << pcIndexBits) - 1);
+    l_PHT[PHT_index] <<= 1;
+    l_PHT[PHTindex] &= ((1 << lhistoryBits) - 1);
+    l_PHT[PHTindex] |= outcome;
     g_history <<= 1;
     g_history  &= ((1 << ghistoryBits) - 1);
     g_history |= outcome;
