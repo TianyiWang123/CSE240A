@@ -7,7 +7,7 @@
 //========================================================//
 #include <stdio.h>
 #include "predictor.h"
-
+#include <string.h>
 //
 // TODO:Student Information
 //
@@ -123,19 +123,65 @@ make_prediction(uint32_t pc)
 // outcome 'outcome' (true indicates that the branch was taken, false
 // indicates that the branch was not taken)
 //
-void gshare_shift_predictor(uint32_t pc, uint8_t result) {
+void gshare_shift_predictor(uint32_t pc, uint8_t outcome) {
     int BHTindex = (pc ^ g_history) & ((1 << ghistoryBits) - 1);
-    if (result == TAKEN) {
+    if (outcome == TAKEN) {
         if (g_BHT[BHTindex] != ST)
             g_BHT[BHTindex]++;
     } else {
         if (g_BHT[BHTindex] != SN)
             g_BHT[BHTindex]--;
     }
-}  
+}
+  
+void tournament_shift_selector(uint8_t outcome) {
+    int globalBHTindex = g_history & ((1 << ghistoryBits) - 1);
+    if (localOutcome == outcome) {
+        if (selector[globalBHTindex] != ST)
+            selector[globalBHTindex]++;
+    } else {
+        if (selector[globalBHTindex] != SN)
+            selector[globalBHTindex]--;
+    }
+}
+
+void tournament_shift_predictor(uint32_t pc, uint8_t outcome) {
+    int PHTindex = pc & ((1 << pcIndexBits) - 1);
+    uint32_t localBHTindex = localPHT[PHTindex];
+    if (outcome == TAKEN) {
+        if (localBHT[localBHTindex] != ST)
+            localBHT[localBHTindex]++;
+    } else {
+        if (localBHT[localBHTindex] != SN)
+            localBHT[localBHTindex]--;
+    }
+
+    int globalBHTindex = g_history & ((1 << ghistoryBits) - 1);
+    if (outcome == TAKEN) {
+        if (globalBHT[globalBHTindex] != ST)
+            globalBHT[globalBHTindex]++;
+    } else {
+        if (globalBHT[globalBHTindex] != SN)
+            globalBHT[globalBHTindex]--;
+    }
+}
+
+void tournament_update(uint32_t pc, uint8_t outcome) {
+    if (localOutcome != globalOutcome) {
+        tournament_shift_selector(outcome);
+    }
+    tournament_shift_predictor(pc, outcome); // shift local predictor
+    int PHTindex = pc & ((1 << pcIndexBits) - 1);
+    localPHT[PHTindex] <<= 1;
+    localPHT[PHTindex] &= ((1 << lhistoryBits) - 1);
+    localPHT[PHTindex] |= outcome;
+    g_history <<= 1;
+    g_history  &= ((1 << ghistoryBits) - 1);
+    ghistory |= outcome;
+}
 
 void
-train_predictor(uint32_t pc, uint8_t result)
+train_predictor(uint32_t pc, uint8_t outcome)
 {
   //
   //TODO: Implement Predictor training
@@ -144,16 +190,16 @@ train_predictor(uint32_t pc, uint8_t result)
     case STATIC:
       return;
     case GSHARE:
-      gshare_shift_predictor(pc, result);
+      gshare_shift_predictor(pc, outcome);
       g_history <<= 1;
       g_history  &= ((1 << ghistoryBits) - 1);
-      g_history |= result;
+      g_history |= outcome;
       break;
     case TOURNAMENT:
-      tournament_update(pc, result);
+      tournament_update(pc, outcome);
       break;
     case CUSTOM:
-      neural_train(pc, result);
+      neural_train(pc, outcome);
       break;
     default:
       break;
