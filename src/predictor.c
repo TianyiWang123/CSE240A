@@ -43,6 +43,7 @@ int verbose;
 //gshare:BHT, history
 uint8_t *g_BHT;  // gshare BHT
 uint32_t g_history;  // gshare global history
+int g_BHT_index;
 //tournament: local BHT, local PHT, global BHT, selector
 uint8_t *localBHT;  // tournament local BHT 
 uint32_t *localPHT;  // tournament local PHT 
@@ -98,8 +99,8 @@ make_prediction(uint32_t pc)
     case STATIC:
       return TAKEN;
     case GSHARE:
-      int index = (pc ^ ghistory) & ((1 << ghistoryBits) - 1);
-      uint8_t predict = g_BHT[index];
+      g_BHT_index = (pc ^ g_history) & ((1 << ghistoryBits) - 1);
+      uint8_t predict = g_BHT[g_BHT_index];
       if (predict == WN || predict == SN){
         uint8_t result = NOTTAKEN;
       }
