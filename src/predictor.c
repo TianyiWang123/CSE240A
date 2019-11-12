@@ -106,7 +106,7 @@ make_prediction(uint32_t pc)
       if (predict == WN){
         result = NOTTAKEN;
       }
-      else{result = TAKEN};
+      else{result = TAKEN;}
       
       return result;   
     case TOURNAMENT:
@@ -150,10 +150,10 @@ train_predictor(uint32_t pc, uint8_t result)
       g_history |= result;
       break;
     case TOURNAMENT:
-      tournament_update(pc, outcome);
+      tournament_update(pc, result);
       break;
     case CUSTOM:
-      neural_train(pc, outcome);
+      neural_train(pc, result);
       break;
     default:
       break;
