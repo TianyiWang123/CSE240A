@@ -170,10 +170,10 @@ void tournament_shift_selector(uint8_t outcome) {
     global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
     if (l_outcome == outcome) {
         if (selector[global_BHT_index] != ST)
-            selector[global_BHT_index]++;
+            selector[global_BHT_index] += 1;
     } else {
         if (selector[global_BHT_index] != SN)
-            selector[global_BHT_index]--;
+            selector[global_BHT_index] -= 1;
     }
 }
 
@@ -200,7 +200,17 @@ void tournament_shift_predictor(uint32_t pc, uint8_t outcome) {
 
 void tournament_update(uint32_t pc, uint8_t outcome) {
     if (l_outcome != global_outcome) {
-        tournament_shift_selector(outcome);
+        global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
+        if (l_outcome == outcome)
+        {
+          if (selector[global_BHT_index] != ST)
+            selector[global_BHT_index] += 1;
+        } 
+        else if (l_outcome != outcome)
+        {
+          if (selector[global_BHT_index] != SN)
+            selector[global_BHT_index] -= 1;
+        }
     }
     tournament_shift_predictor(pc, outcome);
     int PHT_index = pc & ((1 << pcIndexBits) - 1);
