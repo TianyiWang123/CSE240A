@@ -79,7 +79,7 @@ init_predictor()
       break;
     default:
       break;
-      
+  }
 }
 
 // Make a prediction for conditional branch instruction at PC 'pc'
@@ -98,9 +98,9 @@ make_prediction(uint32_t pc)
     case STATIC:
       return TAKEN;
     case GSHARE:
-      int index = (pc^g_history) & ((1<<ghistorybits)-1);
+      int index = (pc ^ ghistory) & ((1 << ghistoryBits) - 1);
       uint8_t predict = g_BHT[index];
-      if (predict == WN){
+      if (predict == WN || predict == SN){
         uint8_t result = NOTTAKEN;
       }
       else{uint8_t result = TAKEN;}
