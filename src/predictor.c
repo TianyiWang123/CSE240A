@@ -73,7 +73,7 @@ init_predictor()
       g_BHT = malloc((1<<ghistoryBits)*sizeof(uint8_t));
       memset(g_BHT, WN, sizeof(uint8_t)*(1<<ghistoryBits));
       break;
-    case TOURNAMENT：
+    case TOURNAMENT:
       break;
     case CUSTOM:
       break;
@@ -98,15 +98,13 @@ make_prediction(uint32_t pc)
     case STATIC:
       return TAKEN;
     case GSHARE:
-      uint8_t result;
-      int f = pc ^ g_history;
       int bits = ((1 << pcIndexBits) - 1);
-      int index = f & bits;
+      int index = (pc^g_history) & bits;
       uint8_t predict = g_BHT[index];
       if (predict == WN){
-        result = NOTTAKEN;
+        uint8_t result = NOTTAKEN;
       }
-      else{result = TAKEN;}
+      else{uint8_t result = TAKEN;}
       
       return result;   
     case TOURNAMENT:
@@ -199,7 +197,7 @@ train_predictor(uint32_t pc, uint8_t outcome)
       tournament_update(pc, outcome);
       break;
     case CUSTOM:
-      neural_train(pc, outcome);
+      //neural_train(pc, outcome);
       break;
     default:
       break;
