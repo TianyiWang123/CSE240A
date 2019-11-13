@@ -245,40 +245,33 @@ void tournament_train(uint32_t pc, uint8_t outcome) {
     g_history  &= ((1 << ghistoryBits) - 1);
     g_history |= outcome;
 }
-
 void per_train(uint32_t pc, uint8_t outcome)
 {
-	per_value = abs(per_value);
-	int sign;
-	if(per_value >= 0) sign = 1;
-	else{sign = -1;}
-	if((sign != (outcome ? 1 : -1)) || (per_value <= theta))
+	int absvalue = abs(per_value);
+	int sign = 1;
+	if(per_value < 0) sign = -1;
+
+	if((sign != (outcome ? 1 : -1)) || (absvalue <= theta))
 	{
-		if((outcome == 1) && (bias[addr_per] < 127))		
-		  bias[addr_per] = bias[addr_per] + 1;
-		else if((outcome == 0) && (bias[addr_per] > -127))
-		  bias[addr_per] = bias[addr_per] - 1;
-		for(i = 0; i < per_g_bits; i++)
-		{
-		  if(outcome == ((g_history >> i) & 1))
-		  {
-		    if(weights[addr_per][i] < 127)
-		    {
-		      weights[addr_per][i] += 1;
-		    }
-		  }
-		    
-		  else if(outcome != (((g_history & (1 << i)) >> i) & 1))
-	          {
-		    if(weights[addr_per][i] > -127)
-		    {
-		      weights[addr_per][i] -= 1;
-		    }
-		  }
-		}
+	  if((outcome == 1) && (bias[addr_per] < 127))
+	  {
+	    bias[addr_per] = bias[addr_per] + 1;
+	  }
+	  else if((outcome == 0) && (bias[addr_per] > -127))
+ 	  {
+	    bias[addr_per] = bias[addr_per] - 1;
+	  }
+	  for(i = 0; i < per_g_bits; i++)
+	  {
+	    if((outcome == ((g_history >> i) & 1)) && weights[addr_per][i] < 127)
+	      weights[addr_per][i] = weights[addr_per][i] + 1;
+	    else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
+	      weights[addr_per][i] = weights[addr_per][i] - 1;
+	  }
 	}
 	g_history = (((g_history << 1) | (outcome)) & ((1 << per_g_bits) - 1));
 }
+ 
     
   
 
