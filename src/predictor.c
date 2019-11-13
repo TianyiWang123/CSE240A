@@ -250,7 +250,7 @@ void per_train(uint32_t pc, uint8_t outcome)
 {
   int sign = (per_value >= 0) - (per_value < 0);
   per_value = abs(per_value); 
-  if((per_value < theta) || (sign != outcome ? 1:-1))
+  if((per_value <= theta) || (sign != (outcome ? 1:-1)))
   {
     if(outcome == 1)
     {
@@ -267,7 +267,7 @@ void per_train(uint32_t pc, uint8_t outcome)
       else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
 	weights[addr_per][i] -= 1;
     }
-    g_history = (((g_history<< 1) | (outcome)) & (1 << per_g_bits)-1);
+    g_history = (((g_history<< 1) | (outcome)) & ((1 << per_g_bits)-1));
   } 
 
 }
