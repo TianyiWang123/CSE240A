@@ -81,14 +81,15 @@ init_predictor()
   //TODO: Initialize Branch Predictor Data Structures
   //
   switch (bpType) {
-      g_history = 0;
     case STATIC:
       return;
     case GSHARE:
+      g_history = 0;
       g_BHT = malloc((1<<ghistoryBits)*sizeof(uint8_t));
       memset(g_BHT, WN, sizeof(uint8_t)*(1<<ghistoryBits));
       break;
     case TOURNAMENT:
+      g_history = 0;
       l_BHT = malloc((1 << lhistoryBits) * sizeof(uint8_t));
       l_PHT = malloc((1 << pcIndexBits) * sizeof(uint32_t));
       global_BHT = malloc((1 << ghistoryBits) * sizeof(uint8_t));
@@ -162,22 +163,14 @@ make_prediction(uint32_t pc)
       } 
       else {return l_outcome;}
     case CUSTOM:
-      addr_per = pc & ((1 << per_pc_bits) - 1);
-      per_value = bias[addr_per];
-      g_history &= ((1 << per_g_bits) - 1);
-      for(i = 0; i < per_g_bits; i++)
+      bias = malloc(number_per * sizeof(int8_t));
+      memset(bias, (int8_t)1, number_per * sizeof(int8_t));
+      weights = malloc(number_per * sizeof(int8_t*));
+      for(i = 0; i < number_per; i++)
       {
-        if(((g_history >> i) & 1) == 0)
-        {
-          per_value -= weights[addr_per][i];
-        }
-        else
-        {
-          per_value += weights[addr_per][i];
-        }
+        weights[i] = malloc(per_g_bits * sizeof(int8_t));
+	memset(weights[i], (int8_t)0, per_g_bits * sizeof(int8_t));
       }
-      if (per_value >= 0) return TAKEN;
-      else {return NOTTAKEN;}
     default:
       break;
   }
@@ -190,7 +183,7 @@ make_prediction(uint32_t pc)
 // outcome 'outcome' (true indicates that the branch was taken, false
 // indicates that the branch was not taken)
 //
-void gshare_train(uint32_t pc, uint8_t outcome) {
+void gshare_shift_predictor(uint32_t pc, uint8_t outcome) {
     int BHTindex = (pc ^ g_history) & ((1 << ghistoryBits) - 1);
     if (outcome == TAKEN) {
         if (g_BHT[BHTindex] != ST)
@@ -201,7 +194,18 @@ void gshare_train(uint32_t pc, uint8_t outcome) {
     }
 }
   
-void tournament_shift(uint32_t pc, uint8_t outcome) {
+void tournament_shift_selector(uint8_t outcome) {
+    global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
+    if (l_outcome == outcome) {
+        if (selector[global_BHT_index] != ST)
+            selector[global_BHT_index]++;
+    } else {
+        if (selector[global_BHT_index] != SN)
+            selector[global_BHT_index]--;
+    }
+}
+
+void tournament_shift_predictor(uint32_t pc, uint8_t outcome) {
     PHT_index = pc & ((1 << pcIndexBits) - 1);
     uint32_t local_BHT_index = l_PHT[PHT_index];
     if (outcome == TAKEN) {
@@ -222,21 +226,11 @@ void tournament_shift(uint32_t pc, uint8_t outcome) {
     }
 }
 
-void tournament_train(uint32_t pc, uint8_t outcome) {
+void tournament_update(uint32_t pc, uint8_t outcome) {
     if (l_outcome != global_outcome) {
-        global_BHT_index = g_history & ((1 << ghistoryBits) - 1);
-        if (l_outcome == outcome)
-        {
-          if (selector[global_BHT_index] != ST)
-            selector[global_BHT_index] += 1;
-        } 
-        else if (l_outcome != outcome)
-        {
-          if (selector[global_BHT_index] != SN)
-            selector[global_BHT_index] -= 1;
-        }
+        tournament_shift_selector(outcome);
     }
-    tournament_shift(pc, outcome);
+    tournament_shift_predictor(pc, outcome);
     int PHT_index = pc & ((1 << pcIndexBits) - 1);
     l_PHT[PHT_index] <<= 1;
     l_PHT[PHT_index] &= ((1 << lhistoryBits) - 1);
@@ -245,6 +239,7 @@ void tournament_train(uint32_t pc, uint8_t outcome) {
     g_history  &= ((1 << ghistoryBits) - 1);
     g_history |= outcome;
 }
+
 void per_train(uint32_t pc, uint8_t outcome)
 {
 	int absvalue = abs(per_value);
@@ -271,9 +266,6 @@ void per_train(uint32_t pc, uint8_t outcome)
 	}
 	g_history = (((g_history << 1) | (outcome)) & ((1 << per_g_bits) - 1));
 }
- 
-    
-  
 
 void
 train_predictor(uint32_t pc, uint8_t outcome)
@@ -285,13 +277,13 @@ train_predictor(uint32_t pc, uint8_t outcome)
     case STATIC:
       return;
     case GSHARE:
-      gshare_train(pc, outcome);
+      gshare_shift_predictor(pc, outcome);
       g_history <<= 1;
       g_history  &= ((1 << ghistoryBits) - 1);
       g_history |= outcome;
       break;
     case TOURNAMENT:
-      tournament_train(pc, outcome);
+      tournament_update(pc, outcome);
       break;
     case CUSTOM:
       per_train(pc, outcome);
