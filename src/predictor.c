@@ -60,6 +60,8 @@ int global_BHT_index;
 int number_per = 128;
 int addr_per;
 int i = 0;
+int per_g_bits = 15;
+int per_pc_bits = 7;
 int8_t theta = (int8_t)((1.93*15)+7);
 int8_t* bias;
 int8_t** weights;
@@ -102,8 +104,8 @@ init_predictor()
       weights = malloc(number_per * sizeof(int8_t*));
       for(i = 0; i < number_per; i++)
       {
-        weights[i] = malloc(15 * sizeof(int8_t));
-	memset(weights[i], (int8_t)0, 15 * sizeof(int8_t));
+        weights[i] = malloc(per_g_bits * sizeof(int8_t));
+	memset(weights[i], (int8_t)0, per_g_bits * sizeof(int8_t));
       }
       break;
     default:
@@ -160,10 +162,10 @@ make_prediction(uint32_t pc)
       } 
       else {return l_outcome;}
     case CUSTOM:
-      addr_per = pc & ((1 << 7) - 1);
+      addr_per = pc & ((1 << per_pc_bits) - 1);
       per_value = bias[addr_per];
-      g_history &= ((1 << 15) - 1);
-      for(i = 0; i < 15; i++)
+      g_history &= ((1 << per_g_bits) - 1);
+      for(i = 0; i < per_g_bits; i++)
       {
         if(((g_history >> i) & 1) == 0)
         {
@@ -258,14 +260,14 @@ void per_train(uint32_t pc, uint8_t outcome)
     {
       if(bias[addr_per] > -127) bias[addr_per] -= 1;
     }
-    for(i = 0; i < 15; i++)
+    for(i = 0; i < per_g_bits; i++)
     {
       if((outcome == ((g_history >> i) & 1)) && weights[addr_per][i] < 127)
 	weights[addr_per][i] += 1;
       else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
 	weights[addr_per][i] -= 1;
     }
-    g_history = (((g_history<< 1) | (outcome)) & (1 << 15)-1);
+    g_history = (((g_history<< 1) | (outcome)) & (1 << per_g_bits)-1);
   } 
 
 }
