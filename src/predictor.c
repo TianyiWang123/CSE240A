@@ -62,7 +62,7 @@ int addr_per;
 int i = 0;
 int8_t theta = (int8_t)((1.93*15)+7);
 int8_t* bias;
-int8_t** weight;
+int8_t** weights;
 int per_value;
 
 
@@ -100,12 +100,11 @@ init_predictor()
       bias = malloc(number_per * sizeof(int8_t));
       memset(bias, (int8_t)1, number_per * sizeof(int8_t));
       weights = malloc(number_per * sizeof(int8_t*));
-      memset(weights, malloc(15 * sizeof(int8_t)), number_per * sizeof(int8_t));
       for(i = 0; i < number_per; i++)
       {
-        memset(weights[i], (int8_t)0, 15 * sizeof(int8_t));
+        weights[i] = malloc(15 * sizeof(int8_t));
+	memset(weights[i], (int8_t)0, 15 * sizeof(int8_t));
       }
-      
       break;
     default:
       break;
@@ -162,7 +161,7 @@ make_prediction(uint32_t pc)
       else {return l_outcome;}
     case CUSTOM:
       addr_per = pc & ((1 << 7) - 1);
-      per_value = bias(addr_per);
+      per_value = bias[addr_per];
       g_history &= ((1 << 15) - 1);
       for(i = 0; i < 15; i++)
       {
@@ -174,6 +173,7 @@ make_prediction(uint32_t pc)
         {
           per_value += weights[addr_per][i];
         }
+      }
       if (per_value >= 0) return TAKEN;
       else {return NOTTAKEN;}
     default:
@@ -259,13 +259,13 @@ void per_train(uint32_t pc, uint8_t outcome)
       if(bias[addr_per] > -127) bias[addr_per] -= 1;
     for(i = 0; i < 15; i++)
     {
-      if((outcome == ((ghregindex >> i) & 1)) && weights_table[perc_addr][i] < 127)
-				weights_table[perc_addr][i] = weights_table[perc_addr][i] + 1;
-			else if(outcome != (((ghregindex & (1 << i)) >> i) & 1) && weights_table[perc_addr][i] > -127)
-				weights_table[perc_addr][i] = weights_table[perc_addr][i] - 1;
+      if((outcome == ((g_history >> i) & 1)) && weights[addr_per][i] < 127)
+				weights[addr_per][i] += 1;
+			else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
+				weights[addr_per][i] -= 1;
 		  }
 	  }
-	  ghregindex = (((ghregindex << 1) | (outcome)) & (1 << 15)-1);
+	  g_history = (((g_history<< 1) | (outcome)) & (1 << 15)-1);
   } 
 
 }
