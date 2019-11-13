@@ -259,7 +259,15 @@ void per_train(uint32_t pc, uint8_t outcome)
       if(bias[addr_per] > -127) bias[addr_per] -= 1;
     for(i = 0; i < 15; i++)
     {
-      
+      if((outcome == ((ghregindex >> i) & 1)) && weights_table[perc_addr][i] < 127)
+				weights_table[perc_addr][i] = weights_table[perc_addr][i] + 1;
+			else if(outcome != (((ghregindex & (1 << i)) >> i) & 1) && weights_table[perc_addr][i] > -127)
+				weights_table[perc_addr][i] = weights_table[perc_addr][i] - 1;
+		  }
+	  }
+	  ghregindex = (((ghregindex << 1) | (outcome)) & (1 << 15)-1);
+  } 
+
 }
     
     
