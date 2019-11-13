@@ -250,8 +250,19 @@ void per_train(uint32_t pc, uint8_t outcome)
   per_value = abs(per_value); 
   if((per_value < theta) || (sign != outcome ? 1:-1))
   {
-    
+    if(outcome == 1)
+    {
+      if(bias[addr_per] < 127) bias[addr_per] += 1;
+    }
+    else
+    {
+      if(bias[addr_per] > -127) bias[addr_per] -= 1;
+    for(i = 0; i < 15; i++)
+    {
+      
 }
+    
+    
   
 
 void
