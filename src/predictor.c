@@ -248,34 +248,36 @@ void tournament_train(uint32_t pc, uint8_t outcome) {
 
 void per_train(uint32_t pc, uint8_t outcome)
 {
-	int absval, signval;
-
-	int i, j;
-	
-	absval = abs(per_value);						// Absolute value of 'val'
-
-	signval = ((per_value >= 0) - (per_value < 0));		// Will return -1 for negative value, 1 for non-negative value
-
-	if((signval != (outcome ? 1 : -1)) || (absval <= theta)) // Update weights if prediction != outcome (where outcome == 1 for taken and -1 for nottaken) or absolute 'val' is less than the training parameter 'theta' 
+	per_value = abs(per_value);
+	int sign;
+	if(per_value >= 0) sign = 1;
+	else{sign = -1;}
+	if((sign != (outcome ? 1 : -1)) || (per_value <= theta))
 	{
-		if((outcome == 1) && (bias[addr_per] < 127))			// Update bias according to outcome, only if the value is less than 127 or greater than -127 (8 bit integer)
+		if((outcome == 1) && (bias[addr_per] < 127))		
 			bias[addr_per] = bias[addr_per] + 1;
-
 		else if((outcome == 0) && (bias[addr_per] > -127))
 			bias[addr_per] = bias[addr_per] - 1;
-
-		for(i = 0; i < per_g_bits; i++)							// Update perceptron weights according to outcome and corresponding GHR value, only if the value is less than 127 or greater than -127 (8 bit integer)
+		for(i = 0; i < per_g_bits; i++)
 		{
-			if((outcome == ((g_history >> i) & 1)) && weights[addr_per][i] < 127)
-				weights[addr_per][i] = weights[addr_per][i] + 1;
-			else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
-				weights[addr_per][i] = weights[addr_per][i] - 1;
+		  if((outcome == ((g_history >> i) & 1))
+		  {
+		    if(weights[addr_per][i] < 127)
+		    {
+		      weights[addr_per][i] = weights[addr_per][i] + 1;
+		    }
+		  }
+		    
+		  else if(outcome != (((g_history & (1 << i)) >> i) & 1)
+	          {
+		    if(weights[addr_per][i] > -127)
+		    {
+		      weights[addr_per][i] = weights[addr_per][i] - 1;
+		    }
+		  }
 		}
 	}
-
-	uint32_t ghmask = (1 << per_g_bits) - 1;
-
-	g_history = (((g_history << 1) | (outcome)) & ghmask); 		// Shift and insert value of outcome into LSB of GHR
+	g_history = (((g_history << 1) | (outcome)) & ((1 << per_g_bits) - 1));
 }
     
   
