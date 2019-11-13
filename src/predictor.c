@@ -257,15 +257,15 @@ void per_train(uint32_t pc, uint8_t outcome)
     else
     {
       if(bias[addr_per] > -127) bias[addr_per] -= 1;
+    }
     for(i = 0; i < 15; i++)
     {
       if((outcome == ((g_history >> i) & 1)) && weights[addr_per][i] < 127)
-				weights[addr_per][i] += 1;
-			else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
-				weights[addr_per][i] -= 1;
-		  }
-	  }
-	  g_history = (((g_history<< 1) | (outcome)) & (1 << 15)-1);
+	weights[addr_per][i] += 1;
+      else if(outcome != (((g_history & (1 << i)) >> i) & 1) && weights[addr_per][i] > -127)
+	weights[addr_per][i] -= 1;
+    }
+    g_history = (((g_history<< 1) | (outcome)) & (1 << 15)-1);
   } 
 
 }
